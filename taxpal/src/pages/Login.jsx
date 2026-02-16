@@ -1,10 +1,44 @@
 import { Link } from 'react-router-dom';
 import { logo } from '../assets/assets';
-
-
-
+import { useState } from 'react';
 
 export default function Login() {
+  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [errors, setErrors] = useState({});
+
+  const validateForm = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    }
+
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least 1 uppercase letter';
+    } else if (!/(?=.*[0-9])/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least 1 number';
+    } else if (!/(?=.*[!@#$%^&*])/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least 1 special character (!@#$%^&*)';
+    }
+
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length === 0) {
+      console.log('Form submitted:', formData);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (errors[e.target.name]) {
+      setErrors({ ...errors, [e.target.name]: '' });
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md">
@@ -17,7 +51,7 @@ export default function Login() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <form className="space-y-5">
+          <form onSubmit={validateForm} noValidate className="space-y-5">
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -25,11 +59,15 @@ export default function Login() {
               </label>
               <input
                 type="text"
+                name="username"
+                value={formData.username}
+                onChange={handleChange}
                 placeholder="Enter your username"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl
-                focus:outline-none focus:ring-2 focus:ring-blue-500
-                focus:border-transparent bg-gray-50"
+                className={`w-full px-4 py-3 border rounded-xl
+                focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50
+                ${errors.username ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}`}
               />
+              {errors.username && <p className="text-red-500 text-sm mt-1">{errors.username}</p>}
             </div>
 
             <div>
@@ -38,11 +76,15 @@ export default function Login() {
               </label>
               <input
                 type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
                 placeholder="Enter your password"
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl
-                focus:outline-none focus:ring-2 focus:ring-blue-500
-                focus:border-transparent bg-gray-50"
+                className={`w-full px-4 py-3 border rounded-xl
+                focus:outline-none focus:ring-2 focus:border-transparent bg-gray-50
+                ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 focus:ring-blue-500'}`}
               />
+              {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
               <div className="text-right mt-2">
                 <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
                   Forgot password?
