@@ -1,10 +1,47 @@
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { logo } from '../assets/assets';
 
-
-
-
 export default function Login() {
+  const navigate = useNavigate();
+  
+  // 1. State for login data
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+
+  // 2. Handle input change
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // 3. Handle Submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:5000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("Login Successful!");
+        // Save user data to browser storage so they stay logged in
+        localStorage.setItem('user', JSON.stringify(data.user));
+        navigate('/'); // Redirect to Home Page
+      } else {
+        alert("Login Failed: " + data.message);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Could not connect to server.");
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md">
@@ -17,18 +54,21 @@ export default function Login() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8">
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleSubmit}>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Username
+                Email
               </label>
               <input
-                type="text"
-                placeholder="Enter your username"
+                type="email"
+                name="email"
+                onChange={handleChange}
+                placeholder="Enter your email"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl
                 focus:outline-none focus:ring-2 focus:ring-blue-500
                 focus:border-transparent bg-gray-50"
+                required
               />
             </div>
 
@@ -38,10 +78,13 @@ export default function Login() {
               </label>
               <input
                 type="password"
+                name="password"
+                onChange={handleChange}
                 placeholder="Enter your password"
                 className="w-full px-4 py-3 border border-gray-200 rounded-xl
                 focus:outline-none focus:ring-2 focus:ring-blue-500
                 focus:border-transparent bg-gray-50"
+                required
               />
               <div className="text-right mt-2">
                 <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
