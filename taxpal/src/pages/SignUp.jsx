@@ -5,7 +5,7 @@ import { logo } from '../assets/assets';
 export default function SignUp() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: '', email: '', password: '', confirmPassword: '', country: '', income_bracket: 'Prefer not to say'
+    name: '', email: '', password: '', confirmPassword: '', country: '', income_bracket: ''
   });
   const [errors, setErrors] = useState({});
 
@@ -168,6 +168,48 @@ export default function SignUp() {
                   <option value="USA">United States</option>
                   <option value="India">India</option>
                   <option value="UK">United Kingdom</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-1">Income Bracket <span className="text-gray-500 text-xs">(Optional)</span></label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <select name="income_bracket" onChange={handleChange} value={formData.income_bracket} className="w-full pl-10 pr-4 py-2.5 border-2 rounded-lg border-blue-200 focus:border-blue-500 focus:outline-none transition-all appearance-none bg-white">
+                  <option value="">Select Income Bracket</option>
+                  {formData.country === 'USA' && (
+                    <>
+                      <option value="0-25k">$0 - $25,000</option>
+                      <option value="25k-50k">$25,000 - $50,000</option>
+                      <option value="50k-75k">$50,000 - $75,000</option>
+                      <option value="75k-100k">$75,000 - $100,000</option>
+                      <option value="100k+">$100,000+</option>
+                    </>
+                  )}
+                  {formData.country === 'India' && (
+                    <>
+                      <option value="0-5L">₹0 - ₹5 Lakhs</option>
+                      <option value="5L-10L">₹5 - ₹10 Lakhs</option>
+                      <option value="10L-20L">₹10 - ₹20 Lakhs</option>
+                      <option value="20L-50L">₹20 - ₹50 Lakhs</option>
+                      <option value="50L+">₹50 Lakhs+</option>
+                    </>
+                  )}
+                  {formData.country === 'UK' && (
+                    <>
+                      <option value="0-20k">£0 - £20,000</option>
+                      <option value="20k-40k">£20,000 - £40,000</option>
+                      <option value="40k-60k">£40,000 - £60,000</option>
+                      <option value="60k-80k">£60,000 - £80,000</option>
+                      <option value="80k+">£80,000+</option>
+                    </>
+                  )}
+                  <option value="prefer-not-to-say">Prefer not to say</option>
                 </select>
               </div>
             </div>
