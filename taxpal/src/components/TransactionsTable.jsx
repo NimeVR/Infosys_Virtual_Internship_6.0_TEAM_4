@@ -1,59 +1,65 @@
+import React from "react";
+
 export default function TransactionsTable({ transactions = [], onDelete }) {
   return (
-    <div className="bg-white rounded-2xl shadow-md p-8 border border-gray-200">
-      <h2 className="text-lg font-semibold mb-6">Recent Transactions</h2>
+    <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+      <h2 className="text-xl font-semibold mb-6 text-gray-800">
+        Recent Transactions
+      </h2>
 
-      <table className="w-full text-left">
-        <thead className="bg-gray-50">
-          <tr className="text-gray-600 text-sm">
-            <th className="py-3">Date</th>
-            <th>Description</th>
-            <th>Category</th>
-            <th>Amount</th>
-            <th>Type</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {transactions.length === 0 ? (
-            <tr>
-              <td colSpan="6" className="py-6 text-center text-gray-400">
-                No transactions yet
-              </td>
-            </tr>
-          ) : (
-            transactions.map((t) => (
-              <tr
-                key={t.id}
-                className="border-b last:border-none hover:bg-gray-50 transition"
-              >
-                <td className="py-4">{t.date}</td>
-                <td>{t.description}</td>
-                <td>{t.category}</td>
-                <td className="font-semibold">${t.amount}</td>
-                <td
-                  className={
-                    t.type === "income"
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }
-                >
-                  {t.type}
-                </td>
-                <td>
-                  <button
-                    onClick={() => onDelete(t.id)}
-                    className="text-red-500 hover:text-red-700 text-sm font-medium"
-                  >
-                    Delete
-                  </button>
-                </td>
+      {transactions.length === 0 ? (
+        <p className="text-gray-500 text-sm">No transactions yet.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-500 border-b">
+                <th className="pb-3">Date</th>
+                <th className="pb-3">Description</th>
+                <th className="pb-3">Category</th>
+                <th className="pb-3">Amount</th>
+                <th className="pb-3">Type</th>
+                <th className="pb-3 text-center">Action</th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            </thead>
+
+            <tbody>
+              {transactions.map((tx) => (
+                <tr
+                  key={tx.id}
+                  className="border-b hover:bg-gray-50 transition"
+                >
+                  <td className="py-3">{tx.date}</td>
+                  <td>{tx.description}</td>
+                  <td>{tx.category}</td>
+                  <td className="font-semibold">${tx.amount}</td>
+
+                  <td>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        tx.type === "income"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-red-100 text-red-600"
+                      }`}
+                    >
+                      {tx.type}
+                    </span>
+                  </td>
+
+                  <td className="text-center">
+                    <button
+                      onClick={() => onDelete(tx.id)}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

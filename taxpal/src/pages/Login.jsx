@@ -38,10 +38,11 @@ export default function Login() {
         const data = await response.json();
 
         if (response.ok) {
-          alert("Login Successful!");
+          // Save token + full user object (must include country from backend)
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
-          window.location.href = '/';
+          // ── Redirect to dashboard, not home ──
+          navigate('/dashboard');
         } else {
           alert("Login Failed: " + data.message);
         }
@@ -68,30 +69,16 @@ export default function Login() {
             <p className="text-xl text-white/90 mb-8">Sign in to continue managing your finances with ease</p>
           </div>
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
+            {["Track income & expenses", "Quarterly tax estimates", "Financial reports"].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <p className="text-lg">{item}</p>
               </div>
-              <p className="text-lg">Track income & expenses</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <p className="text-lg">Quarterly tax estimates</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <p className="text-lg">Financial reports</p>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -118,10 +105,7 @@ export default function Login() {
                   </svg>
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
+                  type="email" name="email" value={formData.email} onChange={handleChange}
                   placeholder="you@example.com"
                   className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 bg-white transition-all ${errors.email ? 'border-red-400 focus:ring-red-400' : 'border-purple-200 focus:ring-purple-500 focus:border-purple-500'}`}
                 />
@@ -138,10 +122,7 @@ export default function Login() {
                   </svg>
                 </div>
                 <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  type="password" name="password" value={formData.password} onChange={handleChange}
                   placeholder="••••••••"
                   className={`w-full pl-12 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 bg-white transition-all ${errors.password ? 'border-red-400 focus:ring-red-400' : 'border-purple-200 focus:ring-purple-500 focus:border-purple-500'}`}
                 />
@@ -149,7 +130,8 @@ export default function Login() {
               {errors.password && <p className="text-red-500 text-sm mt-1 flex items-center gap-1"><span>⚠</span>{errors.password}</p>}
             </div>
 
-            <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2">
+            <button type="submit"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2">
               Sign In
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -158,7 +140,10 @@ export default function Login() {
 
             <div className="text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account? <Link to="/signup" className="text-purple-600 font-semibold hover:text-purple-700 hover:underline">Sign up for free</Link>
+                Don't have an account?{" "}
+                <Link to="/signup" className="text-purple-600 font-semibold hover:text-purple-700 hover:underline">
+                  Sign up for free
+                </Link>
               </p>
             </div>
           </form>
