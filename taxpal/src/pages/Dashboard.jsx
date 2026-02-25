@@ -1,223 +1,326 @@
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
-import { useTransactions } from "../context/TransactionContext";
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, CartesianGrid
-} from "recharts";
+import StatCard from "../components/StatCard";
+import TransactionsTable from "../components/TransactionsTable";
 
-/* ─── Helpers ─────────────────────────────────────────────────────── */
-const inr = n => `₹${Number(n).toLocaleString("en-IN")}`;
+const inr = (n) => `₹${Number(n).toLocaleString("en-IN")}`;
 
-function getMonthlyData(txs) {
-  const map = {};
-  txs.forEach(tx => {
-    const key = new Date(tx.date).toLocaleDateString("en-IN", { month: "short", year: "2-digit" });
-    if (!map[key]) map[key] = { name: key, Income: 0, Expense: 0 };
-    if (tx.type === "income") map[key].Income += Number(tx.amount);
-    else map[key].Expense += Number(tx.amount);
-  });
-  return Object.values(map).slice(-6);
-}
-
-/* ─── Custom Tooltip ──────────────────────────────────────────────── */
-function Tip({ active, payload, label }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="bg-white border border-purple-100 rounded-2xl px-4 py-3 shadow-lg">
-      <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest mb-1">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} className="text-sm font-bold" style={{ color: p.color }}>{inr(p.value)}</p>
-      ))}
-    </div>
-  );
-}
-
-/* ─── Stat Card ───────────────────────────────────────────────────── */
-function StatCard({ title, value, sub, icon, gradient, glow }) {
-  return (
-    <div className={`relative bg-white rounded-2xl p-6 border border-purple-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 overflow-hidden`}>
-      {/* glow blob */}
-      <div className={`absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-20 blur-xl ${glow}`} />
-      <div className="absolute top-4 right-4 text-2xl">{icon}</div>
-      <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{title}</p>
-      <p className={`text-3xl font-extrabold bg-gradient-to-r ${gradient} bg-clip-text text-transparent mb-1 leading-tight`}>
-        {value}
-      </p>
-      <p className="text-xs text-gray-400">{sub}</p>
-    </div>
-  );
-}
-
-/* ─── Recent Tx Row ───────────────────────────────────────────────── */
-function TxRow({ tx }) {
-  const isInc = tx.type === "income";
-  return (
-    <div className="flex items-center gap-3 py-3 border-b border-purple-50 last:border-0">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0 ${isInc ? "bg-green-50" : "bg-red-50"}`}>
-        {isInc ? "📥" : "📤"}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-gray-800 truncate">{tx.description || tx.category}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{tx.category} · {tx.date}</p>
-      </div>
-      <p className={`font-bold text-sm flex-shrink-0 ${isInc ? "text-green-600" : "text-red-500"}`}>
-        {isInc ? "+" : "−"}{inr(tx.amount)}
-      </p>
-    </div>
-  );
-}
-
-/* ─── Dashboard ───────────────────────────────────────────────────── */
 export default function Dashboard() {
-  const { transactions } = useTransactions();
+  const [transactions, setTransactions] = useState([
+    {
+      id: 1,
+      type: "income",
+      amount: 120,
+      category: "Consulting",
+      description: "Design Project",
+      date: "2026-02-17",
+    },
+    {
+      id: 2,
+      type: "expense",
+      amount: 50,
+      category: "Business",
+      description: "Software Subscription",
+      date: "2026-02-15",
+    },
+  ]);
 
-  const income  = transactions.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
-  const expense = transactions.filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
-  const savings = income - expense;
-  const tax     = Math.round(income * 0.25);
+  const incomeCategories = [
+    "Freelance",
+    "Consulting",
+    "Salary",
+    "Investments",
+    "Other Income",
+  ];
 
-  const barData = getMonthlyData(transactions);
-  const pieData = [
-    { name: "Income",  value: income },
-    { name: "Expense", value: expense },
-    { name: "Savings", value: Math.max(0, savings) },
-  ].filter(d => d.value > 0);
-  const PIE_COLORS = ["#9333ea", "#ec4899", "#10b981"];
+  const expenseCategories = [
+    "Business",
+    "Software",
+    "Rent",
+    "Utilities",
+    "Marketing",
+    "Food",
+    "Other Expense",
+  ];
 
-  const recent = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  const [formData, setFormData] = useState({
+    type: "income",
+    amount: "",
+    category: incomeCategories[0],
+    description: "",
+    date: "",
+  });
+
+  const [budget, setBudget] = useState(1000);
+
+  // Monthly Filtering
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const monthlyTransactions = transactions.filter((t) => {
+    const d = new Date(t.date);
+    if (isNaN(d.getTime())) return false;
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+
+  const monthlyIncome = monthlyTransactions
+    .filter((t) => t.type === "income")
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+  const monthlyExpense = monthlyTransactions
+    .filter((t) => t.type === "expense")
+    .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+
+  const estimatedTax = monthlyIncome * 0.25;
+
+  const savingsRate =
+    monthlyIncome > 0
+      ? (((monthlyIncome - monthlyExpense) / monthlyIncome) * 100).toFixed(1)
+      : 0;
+
+  const budgetUsedPercentage =
+    budget > 0 ? ((monthlyExpense / budget) * 100).toFixed(1) : 0;
+
+  const categoryOptions =
+    formData.type === "income" ? incomeCategories : expenseCategories;
+
+  // Handle Input Change
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "type") {
+      setFormData((prev) => ({
+        ...prev,
+        type: value,
+        category:
+          value === "income" ? incomeCategories[0] : expenseCategories[0],
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  // Add Transaction
+  const handleAddTransaction = (e) => {
+    e.preventDefault();
+
+    if (!formData.amount || !formData.date) {
+      alert("Please fill required fields");
+      return;
+    }
+
+    const amount = Number(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    const newTransaction = {
+      id: Date.now(),
+      ...formData,
+      amount,
+    };
+
+    setTransactions((prev) => [newTransaction, ...prev]);
+
+    setFormData({
+      type: "income",
+      amount: "",
+      category: incomeCategories[0],
+      description: "",
+      date: "",
+    });
+  };
+
+  // Delete Transaction
+  const handleDeleteTransaction = (id) => {
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <Sidebar />
 
       <div className="flex-1 p-8 overflow-y-auto">
-
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold leading-tight">
-            Dashboard{" "}
             <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-              Overview
+              Dashboard
             </span>
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            Overview of your monthly income, expenses, tax, and savings.
           </p>
         </div>
 
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+        {/* Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
-            title="Total Income" value={inr(income)}
-            sub={`${transactions.filter(t => t.type === "income").length} credits`}
-            icon="📈" gradient="from-purple-600 to-pink-600" glow="bg-purple-400"
+            title="Monthly Income"
+            value={inr(monthlyIncome)}
+            color="green"
           />
           <StatCard
-            title="Total Expense" value={inr(expense)}
-            sub={`${transactions.filter(t => t.type === "expense").length} debits`}
-            icon="💸" gradient="from-pink-600 to-rose-500" glow="bg-pink-400"
+            title="Monthly Expense"
+            value={inr(monthlyExpense)}
+            color="red"
           />
           <StatCard
-            title="Est. Tax (25%)" value={inr(tax)}
-            sub="Based on total income"
-            icon="🧾" gradient="from-orange-500 to-amber-500" glow="bg-orange-300"
+            title="Estimated Tax"
+            value={inr(estimatedTax)}
+            color="yellow"
           />
           <StatCard
-            title="Net Savings" value={inr(Math.max(0, savings))}
-            sub={income ? `${Math.round(savings / income * 100)}% savings rate` : "—"}
-            icon="💎" gradient="from-emerald-500 to-teal-500" glow="bg-emerald-300"
+            title="Savings Rate"
+            value={`${savingsRate}%`}
+            color="blue"
           />
         </div>
 
-        {/* Charts */}
-        <div className="grid md:grid-cols-2 gap-5 mb-8">
+        {/* Budget Card */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-purple-100 mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">
+            Monthly Budget
+          </h2>
+          <p className="text-xs text-gray-400 mb-4">
+            Compare this month&apos;s spending against your planned budget.
+          </p>
 
-          {/* Bar Chart */}
-          <div className="bg-white rounded-2xl p-6 border border-purple-100 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800">Income vs Expense</h2>
-            <p className="text-xs text-gray-400 mb-5 mt-1">Monthly comparison</p>
-            {barData.length >= 2 ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={barData} barSize={16} barGap={4}>
-                  <defs>
-                    <linearGradient id="gInc" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#9333ea" />
-                      <stop offset="100%" stopColor="#ec4899" />
-                    </linearGradient>
-                    <linearGradient id="gExp" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f43f5e" />
-                      <stop offset="100%" stopColor="#fb923c" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} stroke="#f3e8ff" strokeDasharray="4 4" />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-                  <Tooltip content={<Tip />} cursor={{ fill: "rgba(147,51,234,0.04)" }} />
-                  <Bar dataKey="Income" fill="url(#gInc)" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="Expense" fill="url(#gExp)" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-300 gap-2">
-                <span className="text-5xl">📊</span>
-                <p className="text-sm text-gray-400">Add transactions across 2+ months to see chart</p>
-              </div>
-            )}
-          </div>
-
-          {/* Pie Chart */}
-          <div className="bg-white rounded-2xl p-6 border border-purple-100 shadow-sm">
-            <h2 className="text-lg font-bold text-gray-800">Financial Breakdown</h2>
-            <p className="text-xs text-gray-400 mb-5 mt-1">Distribution overview</p>
-            {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={260}>
-                <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name"
-                    outerRadius={100} innerRadius={56} paddingAngle={3}
-                    label={({ percent }) => `${Math.round(percent * 100)}%`}
-                    labelLine={{ stroke: "#d8b4fe", strokeWidth: 1 }}
-                  >
-                    {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
-                  </Pie>
-                  <Tooltip content={<Tip />} />
-                  <Legend iconType="circle" iconSize={8}
-                    formatter={v => <span className="text-xs text-gray-700">{v}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="h-64 flex flex-col items-center justify-center text-gray-300 gap-2">
-                <span className="text-5xl">🥧</span>
-                <p className="text-sm text-gray-400">Add transactions to see breakdown</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Transactions */}
-        <div className="bg-white rounded-2xl p-6 border border-purple-100 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-bold text-gray-800">Recent Transactions</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Last 5 entries · live from Transactions page</p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Budget:</span>
+              <input
+                type="number"
+                min="1"
+                value={budget}
+                onChange={(e) => setBudget(Number(e.target.value) || 0)}
+                className="border border-purple-100 bg-purple-50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+              />
             </div>
-            <a href="/transactions"
-              className="text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 px-4 py-2 rounded-full transition-colors">
-              View all →
-            </a>
+            <span className="text-sm text-gray-600">
+              Spent: <span className="font-semibold">{inr(monthlyExpense)}</span>{" "}
+              / {inr(budget)}
+            </span>
           </div>
-          {recent.length === 0 ? (
-            <div className="text-center py-10 text-gray-300">
-              <div className="text-5xl mb-3">📭</div>
-              <p className="text-sm text-gray-400">No transactions yet. Head to the Transactions page to add some!</p>
-            </div>
-          ) : (
-            recent.map(tx => <TxRow key={tx.id} tx={tx} />)
-          )}
+
+          <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+            <div
+              className={`h-4 rounded-full ${
+                budgetUsedPercentage > 100
+                  ? "bg-rose-500"
+                  : "bg-gradient-to-r from-purple-500 to-pink-500"
+              }`}
+              style={{ width: `${Math.min(budgetUsedPercentage, 100)}%` }}
+            />
+          </div>
+
+          <p className="mt-2 text-xs text-gray-500">
+            {budgetUsedPercentage}% of budget used
+          </p>
         </div>
 
+        {/* Add Transaction Card */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-purple-100 mb-8">
+          <h2 className="text-lg font-bold text-gray-900 mb-1">
+            Add Transaction
+          </h2>
+          <p className="text-xs text-gray-400 mb-5">
+            Log a new income or expense entry.
+          </p>
+
+          <form
+            onSubmit={handleAddTransaction}
+            className="grid md:grid-cols-6 gap-4"
+          >
+            {/* Type */}
+            <select
+              name="type"
+              value={formData.type}
+              onChange={handleChange}
+              className="w-full bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+            >
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+
+            {/* Amount */}
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                ₹
+              </span>
+              <input
+                type="number"
+                name="amount"
+                min="1"
+                placeholder="0"
+                value={formData.amount}
+                onChange={handleChange}
+                className="w-full bg-purple-50 border border-purple-100 rounded-xl px-8 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+              />
+            </div>
+
+            {/* Category */}
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+            >
+              {categoryOptions.map((cat, index) => (
+                <option key={index} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+
+            {/* Description */}
+            <input
+              type="text"
+              name="description"
+              placeholder="Description"
+              value={formData.description}
+              onChange={handleChange}
+              className="w-full bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+            />
+
+            {/* Date */}
+            <input
+              type="date"
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              className="w-full bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent"
+            />
+
+            {/* Button */}
+            <button
+              type="submit"
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-purple-200 hover:-translate-y-0.5 transition-all"
+            >
+              Add
+            </button>
+          </form>
+        </div>
+
+        {/* Transactions Table */}
+        <div className="bg-white rounded-2xl border border-purple-100 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-purple-50">
+            <h2 className="text-lg font-bold text-gray-900">
+              Recent Transactions
+            </h2>
+          </div>
+
+          <TransactionsTable
+            transactions={transactions}
+            onDelete={handleDeleteTransaction}
+          />
+        </div>
       </div>
     </div>
   );
 }
+
