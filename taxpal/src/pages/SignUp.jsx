@@ -64,6 +64,7 @@ export default function SignUp() {
               name: formData.name,
               email: formData.email,
               country: formData.country,
+              income_bracket: formData.income_bracket,
             })
           );
           alert('Registration Successful!');
