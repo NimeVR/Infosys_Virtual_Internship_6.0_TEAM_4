@@ -13,7 +13,7 @@ export default function Sidebar() {
     { path: "/transactions",  label: "Transactions" },
     // no Categories in main sidebar
     { path: "/tax-estimator", label: "Tax Estimator" },
-    { path: "#",              label: "Reports" },
+    { path: "/reports",       label: "Reports" },
   ];
 
   return (

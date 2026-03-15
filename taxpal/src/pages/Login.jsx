@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { logo } from '../assets/assets';
 import { useTransactions } from '../context/TransactionContext';
 import { useCategories } from '../context/CategoryContext';
+import { useBudgets } from '../context/BudgetContext';
+import { useTaxPayments } from '../context/TaxPaymentContext';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,6 +20,8 @@ export default function Login() {
 
   const { refreshTransactions } = useTransactions();
   const { refreshCategories } = useCategories();
+  const { refreshBudgets } = useBudgets();
+  const { refreshTaxPayments } = useTaxPayments();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,6 +53,8 @@ export default function Login() {
           // refresh any data contexts so they fetch now that token exists
           refreshTransactions();
           refreshCategories();
+          refreshBudgets();
+          refreshTaxPayments();
           // ── Redirect to dashboard, not home ──
           navigate('/dashboard');
         } else {

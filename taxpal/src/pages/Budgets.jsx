@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { useCategories } from "../context/CategoryContext";
-import { api } from "../utils/api";
+import { useBudgets } from "../context/BudgetContext";
 
 /* ─── Month options for picker ─────────────────────────────────────── */
 const MONTHS = [
@@ -56,6 +56,7 @@ const inputCls =
 /* ─── Budgets Page ─────────────────────────────────────────────────── */
 export default function Budgets() {
   const { expenseCategories, getCategoryColor } = useCategories();
+  const { budgets, addBudget, deleteBudget } = useBudgets();
   const expenseCatNames = expenseCategories.map((c) => c.name);
 
   // custom categories only for budgets page
@@ -63,26 +64,6 @@ export default function Budgets() {
 
   const allCategories = [...expenseCatNames, ...customCategories];
   const defaultCategory = allCategories[0] || "";
-
-  const [budgets, setBudgets] = useState([]);
-
-  // load budgets from backend
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api('/api/budgets');
-        const data = await res.json();
-        if (res.ok) {
-          const norm = data.budgets.map((b) => ({ ...b, id: b._id }));
-          setBudgets(norm);
-        } else {
-          console.error('failed to fetch budgets', data.message);
-        }
-      } catch (err) {
-        console.error('error fetching budgets', err);
-      }
-    })();
-  }, []);
   const [form, setForm] = useState({
     category: "",
     amount: "",
@@ -135,46 +116,23 @@ export default function Budgets() {
     const amount = Number(form.amount);
     if (isNaN(amount) || amount <= 0) return;
 
-    try {
-      const res = await api('/api/budgets', {
-        method: 'POST',
-        body: JSON.stringify({
-          category: form.category,
-          amount,
-          month: form.month,
-          description: form.description || '',
-        }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        const newBudget = { ...data.budget, id: data.budget._id };
-        setBudgets((prev) => [...prev, newBudget]);
-        setForm({
-          category: defaultCategory,
-          amount: "",
-          month: "",
-          description: "",
-        });
-      } else {
-        console.error('create budget failed', data.message);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    await addBudget({
+      category: form.category,
+      amount,
+      month: form.month,
+      description: form.description || '',
+    });
+
+    setForm({
+      category: defaultCategory,
+      amount: "",
+      month: "",
+      description: "",
+    });
   };
 
   const handleDelete = async (id) => {
-    try {
-      const res = await api(`/api/budgets/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setBudgets((prev) => prev.filter((b) => b.id !== id));
-      } else {
-        const data = await res.json();
-        console.error('delete budget failed', data.message);
-      }
-    } catch (err) {
-      console.error(err);
-    }
+    await deleteBudget(id);
   };
 
   const getStatus = (amount, spent) =>

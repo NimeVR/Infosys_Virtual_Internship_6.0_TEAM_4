@@ -2,6 +2,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CategoryProvider } from "./context/CategoryContext";
 import { TransactionProvider } from "./context/TransactionContext";
+import { BudgetProvider } from "./context/BudgetContext";
+import { TaxPaymentProvider } from "./context/TaxPaymentContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -15,12 +17,15 @@ import SettingCategories from "./pages/SettingCategories";
 import SettingsNotifications from "./pages/SettingsNotifications";
 import SettingsSecurity from "./pages/SettingsSecurity";
 import TaxEstimator from "./pages/TaxEstimator";
+import Reports from "./pages/Reports";
 
 function App() {
   return (
     <CategoryProvider>
       <TransactionProvider>
-        <BrowserRouter>
+        <BudgetProvider>
+          <TaxPaymentProvider>
+            <BrowserRouter>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
@@ -30,6 +35,7 @@ function App() {
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/tax-estimator" element={<TaxEstimator />} />
+            <Route path="/reports" element={<Reports />} />
 
             {/* Settings layout with internal sidebar (used by overlay) */}
             <Route path="/settings" element={<SettingLayout />}>
@@ -47,6 +53,8 @@ function App() {
             </Route>
           </Routes>
         </BrowserRouter>
+          </TaxPaymentProvider>
+        </BudgetProvider>
       </TransactionProvider>
     </CategoryProvider>
   );
