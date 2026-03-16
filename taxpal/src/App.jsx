@@ -1,6 +1,16 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { CategoryProvider } from "./context/CategoryContext";
+import Home               from "./pages/Home";
+import Login              from "./pages/Login";
+import SignUp             from "./pages/SignUp";
+import Logout             from "./pages/Logout";
+import Dashboard          from "./pages/Dashboard";
+import Transactions       from "./pages/Transactions";
+import Budgets            from "./pages/Budgets";
+import TaxEstimator       from "./pages/TaxEstimator";
+import Reports            from "./pages/Reports";
+import SettingCategories  from "./pages/SettingCategories";
+
 import { TransactionProvider } from "./context/TransactionContext";
 import { BudgetProvider } from "./context/BudgetContext";
 import { TaxPaymentProvider } from "./context/TaxPaymentContext";
@@ -36,21 +46,25 @@ function App() {
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/tax-estimator" element={<TaxEstimator />} />
             <Route path="/reports" element={<Reports />} />
+import { CategoryProvider }    from "./context/CategoryContext";
 
-            {/* Settings layout with internal sidebar (used by overlay) */}
-            <Route path="/settings" element={<SettingLayout />}>
-              <Route
-                index
-                element={<Navigate to="/settings/categories" replace />}
-              />
-              <Route path="profile" element={<SettingsProfile />} />
-              <Route path="categories" element={<SettingCategories />} />
-              <Route
-                path="notifications"
-                element={<SettingsNotifications />}
-              />
-              <Route path="security" element={<SettingsSecurity />} />
-            </Route>
+function App() {
+  return (
+    <BrowserRouter>
+      <CategoryProvider>
+        <TransactionProvider>
+          <Routes>
+            <Route path="/"                    element={<Home />} />
+            <Route path="/login"               element={<Login />} />
+            <Route path="/signup"              element={<SignUp />} />
+            <Route path="/logout"              element={<Logout />} />
+
+            <Route path="/dashboard"           element={<Dashboard />} />
+            <Route path="/transactions"        element={<Transactions />} />
+            <Route path="/budgets"             element={<Budgets />} />
+            <Route path="/tax-estimator"       element={<TaxEstimator />} />
+            <Route path="/reports"             element={<Reports />} />
+            <Route path="/settings/categories" element={<SettingCategories />} />
           </Routes>
         </BrowserRouter>
           </TaxPaymentProvider>
