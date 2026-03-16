@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { logo } from '../assets/assets';
+import { useTransactions } from '../context/TransactionContext';
+import { useCategories } from '../context/CategoryContext';
+import { useBudgets } from '../context/BudgetContext';
+import { useTaxPayments } from '../context/TaxPaymentContext';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -13,6 +17,11 @@ export default function Login() {
       setErrors({ ...errors, [e.target.name]: '' });
     }
   };
+
+  const { refreshTransactions } = useTransactions();
+  const { refreshCategories } = useCategories();
+  const { refreshBudgets } = useBudgets();
+  const { refreshTaxPayments } = useTaxPayments();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -40,6 +49,12 @@ export default function Login() {
         if (response.ok) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
+          // refresh any data contexts so they fetch now that token exists
+          refreshTransactions();
+          refreshCategories();
+          refreshBudgets();
+          refreshTaxPayments();
+          // ── Redirect to dashboard, not home ──
           navigate('/dashboard');
         } else {
           alert("Login Failed: " + data.message);

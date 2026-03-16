@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import { useCategories } from "../context/CategoryContext";
+import { useBudgets } from "../context/BudgetContext";
 import { useTransactions } from "../context/TransactionContext";
 import { api } from "../utils/api";
 
@@ -140,11 +141,14 @@ function DuplicateModal({ conflict, onDelete, onEdit, onCancel, fmt, currency })
 /* ── Main Page ────────────────────────────────────────────────────────────── */
 export default function Budgets() {
   const { expenseCategories, getCategoryColor } = useCategories();
+  const { budgets, addBudget, deleteBudget } = useBudgets();
+  const expenseCatNames = expenseCategories.map((c) => c.name);
   const { transactions, fmt, currency, setBudgets: syncBudgetsToContext } = useTransactions();
 
   const expenseCatNames = expenseCategories.map((c) => c.name);
   const [customCategories, setCustomCategories] = useState([]);
   const allCategories = [...expenseCatNames, ...customCategories];
+  const defaultCategory = allCategories[0] || "";
 
   const [budgets, setBudgets] = useState([]);
   const [form, setForm] = useState({
@@ -250,6 +254,23 @@ export default function Budgets() {
 
     const amount = Number(form.amount);
 
+    await addBudget({
+      category: form.category,
+      amount,
+      month: form.month,
+      description: form.description || '',
+    });
+
+    setForm({
+      category: defaultCategory,
+      amount: "",
+      month: "",
+      description: "",
+    });
+  };
+
+  const handleDelete = async (id) => {
+    await deleteBudget(id);
     // ── Duplicate check ────────────────────────────────────────────────────
     const existing = budgets.find(
       (b) =>

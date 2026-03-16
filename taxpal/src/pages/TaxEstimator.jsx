@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
+import { useTaxPayments } from "../context/TaxPaymentContext";
 
 const inputCls =
   "w-full bg-purple-50 border border-purple-100 rounded-xl px-4 py-2.5 text-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all placeholder-gray-300";
@@ -273,6 +274,7 @@ function QuarterCard({ q, year, currency, fmt, onPay }) {
    MAIN PAGE
 ══════════════════════════════════════════════════════════════════════ */
 export default function TaxEstimator() {
+  const { addTaxPayment } = useTaxPayments();
   const [form, setForm] = useState({
     country:          "usa",
     state:            "",
@@ -299,6 +301,18 @@ export default function TaxEstimator() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const recordPayment = async () => {
+    if (!result) return;
+    await addTaxPayment({
+      quarter: form.quarter,
+      amount: result.estimatedTax,
+      country: form.country,
+      description: `Estimated tax for ${form.quarter}`,
+    });
+    alert('Tax payment recorded!');
+  };
+
+  function calculateTax(e) {
   /* ── Recalculate & build quarters ── */
   const calculateTax = (e) => {
     e.preventDefault();
@@ -537,6 +551,32 @@ export default function TaxEstimator() {
                 <p className="text-gray-400 text-sm mt-1">
                   Fill in your income details and click Calculate Tax to see your quarterly breakdown.
                 </p>
+              ) : (
+                <div className="space-y-2 text-sm">
+                  <p className="text-gray-500">
+                    Country:{" "}
+                    <span className="font-semibold text-gray-800">
+                      {form.country === "india" ? "India" : "United States"}
+                    </span>
+                  </p>
+                  <p className="text-gray-500">
+                    Taxable income:{" "}
+                    <span className="font-semibold text-gray-800">
+                      {currency} {result.taxable.toFixed(2)}
+                    </span>
+                  </p>
+                  <p className="text-gray-500">
+                    Estimated quarterly tax:{" "}
+                    <span className="font-semibold text-blue-600">
+                      {currency} {result.estimatedTax.toFixed(2)}
+                    </span>
+                  </p>
+                  <button
+                    onClick={recordPayment}
+                    className="mt-4 w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-xl shadow-lg hover:shadow-green-200 transition-all"
+                  >
+                    Record Tax Payment
+                  </button>
               </div>
             )}
 

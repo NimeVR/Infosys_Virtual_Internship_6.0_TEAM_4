@@ -11,7 +11,7 @@ export default function Sidebar() {
     { path: "/budgets",       label: "Budgets" },
     { path: "/transactions",  label: "Transactions" },
     { path: "/tax-estimator", label: "Tax Estimator" },
-    { path: "/reports",       label: "Reports" },  // ← fixed from "#"
+    { path: "/reports",       label: "Reports" },
   ];
 
   return (
