@@ -63,6 +63,39 @@ function computeAnnualTax({ country, annualTaxable }) {
   return annualTaxable * (0.153 + 0.12);
 }
 
+function buildTaxQuarters({ annualTax, year, transactions = [], country }) {
+  const perQ = annualTax / 4;
+  const paidByQuarter = getTaxPaymentsByQuarter(transactions, year);
+  const qKeys = ["Q1", "Q2", "Q3", "Q4"];
+
+  const newQuarters = qKeys.map((key, i) => {
+    const totalPaid = paidByQuarter[key] || 0;
+    return {
+      key,
+      label:      QUARTER_DEADLINES[key].label,
+      baseAmount: perQ,
+      carryIn:    0,
+      totalDue:   perQ,
+      totalPaid,
+      remaining:  0,
+      fullyPaid:  false,
+      prevKey:    i > 0 ? qKeys[i - 1] : null,
+      currency:   country === "india" ? "₹" : "$",
+    };
+  });
+
+  for (let i = 0; i < newQuarters.length; i++) {
+    const q = newQuarters[i];
+    const carry = i > 0 ? Math.max(newQuarters[i - 1].remaining, 0) : 0;
+    q.carryIn   = carry;
+    q.totalDue  = q.baseAmount + carry;
+    q.remaining = Math.max(q.totalDue - q.totalPaid, 0);
+    q.fullyPaid = q.remaining <= 0;
+  }
+
+  return newQuarters;
+}
+
 /* ── Deadline Alert Banner ──────────────────────────────────────────── */
 function DeadlineAlerts({ quarters, year }) {
   const alerts = [];
@@ -307,6 +340,7 @@ export default function TaxEstimator() {
   const [quarters, setQuarters] = useState(null);
   const [calculated, setCalculated] = useState(false);
   const [payModal, setPayModal] = useState(null); // quarter object
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
   const currency = form.country === "india" ? "₹" : "$";
   const fmt = (n) =>
@@ -315,6 +349,7 @@ export default function TaxEstimator() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setHasUserInteracted(true);
   };
 
   /* ── Recalculate & build quarters ── */
@@ -330,42 +365,16 @@ export default function TaxEstimator() {
     const annualTax  = computeAnnualTax({ country: form.country, annualTaxable: taxable });
     const perQ       = annualTax / 4;
 
-    const qKeys = ["Q1", "Q2", "Q3", "Q4"];
-
-    // If already calculated, preserve payments but rebuild amounts
-    const prevQuarters = quarters || [];
-    const paidByQuarter = getTaxPaymentsByQuarter(transactions, form.year);
-
-    const newQuarters = qKeys.map((key, i) => {
-      const prev = prevQuarters.find((q) => q.key === key);
-      const persistedPaid = paidByQuarter[key] || 0;
-      const totalPaid = Math.max(prev?.totalPaid || 0, persistedPaid);
-      return {
-        key,
-        label:      QUARTER_DEADLINES[key].label,
-        baseAmount: perQ,
-        carryIn:    0,       // will be filled in next pass
-        totalDue:   perQ,   // will be filled in next pass
-        totalPaid,
-        remaining:  0,       // computed below
-        fullyPaid:  false,
-        prevKey:    i > 0 ? qKeys[i - 1] : null,
-        currency,
-      };
+    const newQuarters = buildTaxQuarters({
+      annualTax,
+      year: Number(form.year),
+      transactions,
+      country: form.country,
     });
-
-    // Forward-pass: carry unpaid amounts into next quarter
-    for (let i = 0; i < newQuarters.length; i++) {
-      const q = newQuarters[i];
-      const carry = i > 0 ? Math.max(newQuarters[i - 1].remaining, 0) : 0;
-      q.carryIn  = carry;
-      q.totalDue = q.baseAmount + carry;
-      q.remaining  = Math.max(q.totalDue - q.totalPaid, 0);
-      q.fullyPaid  = q.remaining <= 0;
-    }
 
     setQuarters(newQuarters);
     setCalculated(true);
+    setHasUserInteracted(true);
 
     // Save to backend
     try {
@@ -465,7 +474,46 @@ export default function TaxEstimator() {
     fetchTaxHistory();
   }, []);
 
-  /* ── Alert quarters (for deadline banners) ── */
+  useEffect(() => {
+    if (hasUserInteracted || taxHistory.length === 0) return;
+
+    const latestEstimate = taxHistory.find((item) => item.estimatedTax > 0 && item.year === Number(form.year))
+      || taxHistory.find((item) => item.estimatedTax > 0);
+    if (!latestEstimate) return;
+
+    setForm((prev) => ({
+      ...prev,
+      country:      latestEstimate.country || prev.country,
+      state:        latestEstimate.state || prev.state,
+      filingStatus: latestEstimate.filingStatus || prev.filingStatus,
+      year:         latestEstimate.year || prev.year,
+      grossIncome:  latestEstimate.grossIncome || prev.grossIncome,
+      businessExpenses: "",
+      retirement:       "",
+      healthInsurance:  "",
+      homeOffice:       "",
+    }));
+  }, [taxHistory, form.year, hasUserInteracted]);
+
+  useEffect(() => {
+    if (hasUserInteracted || taxHistory.length === 0) return;
+
+    const latestEstimate = taxHistory.find((item) => item.estimatedTax > 0 && item.year === Number(form.year))
+      || taxHistory.find((item) => item.estimatedTax > 0);
+    if (!latestEstimate) return;
+
+    const loadedQuarters = buildTaxQuarters({
+      annualTax: latestEstimate.estimatedTax,
+      year: latestEstimate.year || Number(form.year),
+      transactions,
+      country: latestEstimate.country || form.country,
+    });
+
+    setQuarters(loadedQuarters);
+    setCalculated(true);
+  }, [taxHistory, transactions, form.year, hasUserInteracted]);
+
+  /* ── Alert quarters (for deadline banners) ───────────────────────────────── */
   const alertQuarters = (quarters || []).map((q) => ({
     ...q,
     currency,

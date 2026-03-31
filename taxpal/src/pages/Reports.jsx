@@ -163,7 +163,8 @@ export default function Reports() {
   const income  = filteredTxs.filter(t => t.type === "income").reduce((s,t)  => s + Number(t.amount), 0);
   const expense = filteredTxs.filter(t => t.type === "expense").reduce((s,t) => s + Number(t.amount), 0);
   const savings = income - expense;
-  const tax     = Math.round(income * 0.25);
+  const taxable = Math.max(savings, 0);
+  const tax     = Math.round(taxable * 0.25);
 
   const monthlyData   = groupByMonth(filteredTxs);
   const quarterlyData = groupByQuarter(yearTxs); // always full-year for quarterly breakdown
@@ -342,7 +343,7 @@ export default function Reports() {
             {[
               { label: "Gross Income",         val: fmt(income),              color: "text-purple-700" },
               { label: "Total Deductible Exp.", val: fmt(expense),             color: "text-rose-500" },
-              { label: "Net Taxable Income",    val: fmt(Math.max(0,savings)), color: "text-gray-800" },
+              { label: "Net Taxable Income",    val: fmt(taxable),             color: "text-gray-800" },
               { label: "Estimated Tax",         val: fmt(tax),                 color: "text-blue-600 font-extrabold text-base" },
             ].map(r => (
               <div key={r.label} className="flex justify-between text-sm py-2 border-b border-purple-100 last:border-0">
@@ -385,7 +386,8 @@ export default function Reports() {
               {QUARTERS.map((qDef, i) => {
                 const row = quarterlyData.find(r => r.quarter.startsWith(qDef.value)) || { income: 0, expense: 0 };
                 const net = row.income - row.expense;
-                const qt  = Math.round(row.income * 0.25);
+                const taxableQuarter = Math.max(net, 0);
+                const qt  = Math.round(taxableQuarter * 0.25);
                 return (
                   <tr key={qDef.value} className="border-b border-purple-50 hover:bg-purple-50/40">
                     <td className="px-4 py-3">
